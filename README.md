@@ -104,3 +104,5 @@ ng cache clean
 ```
 
 For more information, visit the [Angular documentation](https://angular.io/docs).
+<img width="1920" height="1200" alt="image" src="https://github.com/user-attachments/assets/d253c24d-f250-488e-9717-1ccc7381331a" />
+
