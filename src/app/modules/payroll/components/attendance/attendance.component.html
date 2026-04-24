@@ -1,0 +1,206 @@
+<div class="attendance-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <h1>Monthly Attendance Upload – Payroll Module</h1>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-cards">
+    <div class="card total-staff">
+      <div class="card-icon">👥</div>
+      <div class="card-content">
+        <div class="card-label">Total Staff</div>
+        <div class="card-value">{{ totalStaff }}</div>
+      </div>
+    </div>
+
+    <div class="card uploaded">
+      <div class="card-icon">📤</div>
+      <div class="card-content">
+        <div class="card-label">Uploaded</div>
+        <div class="card-value">{{ uploadedCount }}</div>
+      </div>
+    </div>
+
+    <div class="card pending">
+      <div class="card-icon">⏳</div>
+      <div class="card-content">
+        <div class="card-label">Pending Upload</div>
+        <div class="card-value">{{ pendingCount }}</div>
+      </div>
+    </div>
+
+    <div class="card last-upload">
+      <div class="card-icon">📅</div>
+      <div class="card-content">
+        <div class="card-label">Last Upload</div>
+        <div class="card-value">{{ lastUploadDate }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Steps Indicator -->
+  <div class="steps-container">
+    <div class="step" [class.active]="currentStep >= 1" (click)="goToStep(1)">
+      <span class="step-number">1</span>
+      <span class="step-label">Select Context</span>
+    </div>
+    <div class="step-connector" [class.active]="currentStep >= 2"></div>
+
+    <div class="step" [class.active]="currentStep >= 2" (click)="goToStep(2)">
+      <span class="step-number">2</span>
+      <span class="step-label">Upload File</span>
+    </div>
+    <div class="step-connector" [class.active]="currentStep >= 3"></div>
+
+    <div class="step" [class.active]="currentStep >= 3" (click)="goToStep(3)">
+      <span class="step-number">3</span>
+      <span class="step-label">Validate Data</span>
+    </div>
+    <div class="step-connector" [class.active]="currentStep >= 4"></div>
+
+    <div class="step" [class.active]="currentStep >= 4">
+      <span class="step-number">4</span>
+      <span class="step-label">Confirm & Submit</span>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="content-wrapper">
+    <!-- Left Column - Form -->
+    <div class="left-column">
+      <!-- Step 1: Select Context -->
+      <div *ngIf="currentStep === 1" class="step-content">
+        <h2>Step 1: Select Context</h2>
+        <form [formGroup]="attendanceForm">
+          <div class="form-group">
+            <label for="institution">Institution <span class="required">*</span></label>
+            <select formControlName="institution" id="institution" class="form-control">
+              <option *ngFor="let inst of institutions" [value]="inst">{{ inst }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="department">Department <span class="required">*</span></label>
+            <select formControlName="department" id="department" class="form-control">
+              <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="monthYear">Month & Year <span class="required">*</span></label>
+            <input formControlName="monthYear" id="monthYear" type="text" class="form-control" readonly />
+          </div>
+        </form>
+
+        <!-- File Upload Section -->
+        <div class="file-upload-section">
+          <div class="drag-drop-area" (dragover)="onDragOver($event)" (drop)="onDrop($event)">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Drag & Drop Attendance File Here</div>
+            <div class="upload-or">or</div>
+            <button class="btn btn-primary" (click)="browseFile()">Browse File</button>
+            <input id="fileInput" #fileInput type="file" hidden (change)="onFileSelected($event)" accept=".xlsx,.csv" />
+            <div class="upload-format">Supported .xlsx, .csv Max Size: 5MB</div>
+          </div>
+
+          <div *ngIf="uploadedFile" class="file-selected">
+            <p>✓ File selected: {{ uploadedFile.name }}</p>
+          </div>
+
+          <div class="download-sample">
+            <a href="javascript:void(0)" (click)="downloadSampleFormat()">Download Sample Format</a>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-primary" (click)="uploadAndValidate()" [disabled]="!isStep1Valid() || isUploading">
+            <span *ngIf="!isUploading">Upload & Validate</span>
+            <span *ngIf="isUploading">Uploading...</span>
+          </button>
+          <button class="btn btn-secondary">Reset</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Validate Data -->
+      <div *ngIf="currentStep === 3" class="step-content">
+        <h2>Step 3: Validate Data</h2>
+        <div class="validation-summary">
+          <div class="validation-item valid">
+            <span class="icon">✓</span>
+            <span class="label">Valid Records:</span>
+            <span class="value">{{ validRecords }}</span>
+          </div>
+          <div class="validation-item warning">
+            <span class="icon">⚠</span>
+            <span class="label">Missing Data:</span>
+            <span class="value">{{ missingData }}</span>
+          </div>
+          <div class="validation-item error">
+            <span class="icon">✕</span>
+            <span class="label">Errors:</span>
+            <span class="value">{{ errors }}</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-primary" (click)="submitFinal()" [disabled]="!isStep3Valid()">
+            Submit Final
+          </button>
+          <button class="btn btn-secondary" (click)="goToStep(1)">
+            Back
+          </button>
+          <button class="btn btn-link" (click)="downloadErrorReport()">
+            Download Error Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column - Sidebar -->
+    <div class="right-column">
+      <!-- Upload History -->
+      <div class="sidebar-section">
+        <h3>Upload History</h3>
+        <div class="history-list">
+          <div *ngFor="let history of uploadHistory" class="history-item">
+            <span class="month">{{ history.month }}</span>
+            <span class="status" [class.completed]="history.status === 'completed'" [class.not-uploaded]="history.status === 'not-uploaded'">
+              {{ history.status === 'completed' ? '✓ Completed' : 'Not Uploaded' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payroll Impact -->
+      <div class="sidebar-section payroll-impact">
+        <h3>Payroll Impact</h3>
+        <div class="impact-message">
+          <p>This upload will affect salary processing for {{ attendanceForm.get('monthYear')?.value }}.</p>
+        </div>
+      </div>
+
+      <!-- Data Preview (when step 1 complete) -->
+      <div *ngIf="currentStep >= 2" class="sidebar-section">
+        <h3>Preview</h3>
+        <table class="preview-table">
+          <thead>
+            <tr>
+              <th>Employee ID</th>
+              <th>Name</th>
+              <th>Present</th>
+              <th>Absent</th>
+              <th>Leave</th>
+              <th>Errors</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="!uploadedFile">
+              <td colspan="6" class="no-preview">No preview available until file is uploaded.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
