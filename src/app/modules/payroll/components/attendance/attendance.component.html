@@ -1,206 +1,325 @@
 <div class="attendance-container">
-  <!-- Header Section -->
-  <div class="header-section">
-    <h1>Monthly Attendance Upload – Payroll Module</h1>
-  </div>
-
-  <!-- Summary Cards -->
-  <div class="summary-cards">
-    <div class="card total-staff">
-      <div class="card-icon">👥</div>
-      <div class="card-content">
-        <div class="card-label">Total Staff</div>
-        <div class="card-value">{{ totalStaff }}</div>
+  <div class="page-shell">
+    <section class="hero-panel">
+      <div>
+        <p class="eyebrow">Payroll Operations</p>
+        <h1>Monthly Attendance Upload</h1>
+        <p class="hero-copy">Upload, validate, and prepare monthly attendance data for payroll with a secure, enterprise-grade workflow.</p>
       </div>
-    </div>
-
-    <div class="card uploaded">
-      <div class="card-icon">📤</div>
-      <div class="card-content">
-        <div class="card-label">Uploaded</div>
-        <div class="card-value">{{ uploadedCount }}</div>
+      <div class="hero-pill">
+        <span class="hero-pill-dot"></span>
+        <span>Enterprise-ready payroll validation</span>
       </div>
-    </div>
+    </section>
 
-    <div class="card pending">
-      <div class="card-icon">⏳</div>
-      <div class="card-content">
-        <div class="card-label">Pending Upload</div>
-        <div class="card-value">{{ pendingCount }}</div>
+    <section class="summary-grid" aria-label="Dashboard summary">
+      <article class="summary-card primary" *ngFor="let metric of summaryMetrics">
+        <div class="summary-card-icon">{{ metric.icon }}</div>
+        <div class="summary-card-content">
+          <p class="summary-card-label">{{ metric.label }}</p>
+          <div class="summary-card-value-row">
+            <h3>{{ metric.value }}</h3>
+            <span class="trend-pill" [class.positive]="metric.tone === 'positive'" [class.warning]="metric.tone === 'warning'" [class.neutral]="metric.tone === 'neutral'">{{ metric.trend }}</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="wizard-card" aria-label="Upload steps">
+      <div class="wizard-step" [class.completed]="currentStep > 1" [class.active]="currentStep === 1" (click)="goToStep(1)">
+        <span class="wizard-icon">
+          <span *ngIf="currentStep > 1">✓</span>
+          <span *ngIf="currentStep === 1">1</span>
+        </span>
+        <div class="wizard-copy">
+          <strong>Select context</strong>
+          <small>Institution, department & month</small>
+        </div>
       </div>
-    </div>
-
-    <div class="card last-upload">
-      <div class="card-icon">📅</div>
-      <div class="card-content">
-        <div class="card-label">Last Upload</div>
-        <div class="card-value">{{ lastUploadDate }}</div>
+      <div class="wizard-connector" [class.active]="currentStep >= 2"></div>
+      <div class="wizard-step" [class.completed]="currentStep > 2" [class.active]="currentStep === 2" (click)="goToStep(2)">
+        <span class="wizard-icon">
+          <span *ngIf="currentStep > 2">✓</span>
+          <span *ngIf="currentStep <= 2">2</span>
+        </span>
+        <div class="wizard-copy">
+          <strong>Upload file</strong>
+          <small>Attach attendance records</small>
+        </div>
       </div>
-    </div>
-  </div>
+      <div class="wizard-connector" [class.active]="currentStep >= 3"></div>
+      <div class="wizard-step" [class.completed]="currentStep > 3" [class.active]="currentStep === 3" (click)="goToStep(3)">
+        <span class="wizard-icon">
+          <span *ngIf="currentStep > 3">✓</span>
+          <span *ngIf="currentStep <= 3">3</span>
+        </span>
+        <div class="wizard-copy">
+          <strong>Validate data</strong>
+          <small>Review and submit</small>
+        </div>
+      </div>
+    </section>
 
-  <!-- Steps Indicator -->
-  <div class="steps-container">
-    <div class="step" [class.active]="currentStep >= 1" (click)="goToStep(1)">
-      <span class="step-number">1</span>
-      <span class="step-label">Select Context</span>
-    </div>
-    <div class="step-connector" [class.active]="currentStep >= 2"></div>
-
-    <div class="step" [class.active]="currentStep >= 2" (click)="goToStep(2)">
-      <span class="step-number">2</span>
-      <span class="step-label">Upload File</span>
-    </div>
-    <div class="step-connector" [class.active]="currentStep >= 3"></div>
-
-    <div class="step" [class.active]="currentStep >= 3" (click)="goToStep(3)">
-      <span class="step-number">3</span>
-      <span class="step-label">Validate Data</span>
-    </div>
-    <div class="step-connector" [class.active]="currentStep >= 4"></div>
-
-    <div class="step" [class.active]="currentStep >= 4">
-      <span class="step-number">4</span>
-      <span class="step-label">Confirm & Submit</span>
-    </div>
-  </div>
-
-  <!-- Main Content Area -->
-  <div class="content-wrapper">
-    <!-- Left Column - Form -->
-    <div class="left-column">
-      <!-- Step 1: Select Context -->
-      <div *ngIf="currentStep === 1" class="step-content">
-        <h2>Step 1: Select Context</h2>
-        <form [formGroup]="attendanceForm">
-          <div class="form-group">
-            <label for="institution">Institution <span class="required">*</span></label>
-            <select formControlName="institution" id="institution" class="form-control">
-              <option *ngFor="let inst of institutions" [value]="inst">{{ inst }}</option>
-            </select>
+    <div class="content-grid">
+      <section class="panel form-panel">
+        <div *ngIf="currentStep === 1" class="step-content">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Step 1</p>
+              <h2>Select payroll context</h2>
+            </div>
+            <span class="status-chip info">Required fields</span>
           </div>
 
-          <div class="form-group">
-            <label for="department">Department <span class="required">*</span></label>
-            <select formControlName="department" id="department" class="form-control">
-              <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
-            </select>
+          <form [formGroup]="attendanceForm" class="form-grid" novalidate>
+            <div class="field-group">
+              <label for="institution">Institution</label>
+              <div class="input-shell">
+                <select formControlName="institution" id="institution" class="form-control" aria-label="Institution">
+                  <option *ngFor="let inst of institutions" [value]="inst">{{ inst }}</option>
+                </select>
+              </div>
+              <small>Choose the institution associated with this attendance batch.</small>
+            </div>
+
+            <div class="field-group">
+              <label for="department">Department</label>
+              <div class="input-shell">
+                <select formControlName="department" id="department" class="form-control" aria-label="Department">
+                  <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+                </select>
+              </div>
+              <small>Apply the upload to a specific department or the full institution.</small>
+            </div>
+
+            <div class="field-group">
+              <label for="monthYear">Month & year</label>
+              <div class="input-shell">
+                <input formControlName="monthYear" id="monthYear" type="text" class="form-control" readonly aria-label="Month and year" />
+              </div>
+              <small>Payroll processing month is locked for this upload batch.</small>
+            </div>
+          </form>
+
+          <div class="upload-section">
+            <div class="upload-card" (dragover)="onDragOver($event)" (drop)="onDrop($event)" (click)="browseFile()" tabindex="0" role="button" aria-label="Upload attendance file">
+              <div class="upload-icon">📁</div>
+              <div class="upload-copy">
+                <h3>Drag and drop attendance file</h3>
+                <p>or click to browse local documents</p>
+              </div>
+              <div class="format-row">
+                <span class="format-pill">.xlsx</span>
+                <span class="format-pill">.csv</span>
+                <span class="format-pill">Max 5 MB</span>
+              </div>
+              <input id="fileInput" #fileInput type="file" hidden (change)="onFileSelected($event)" accept=".xlsx,.csv" />
+            </div>
+
+            <div class="upload-progress" *ngIf="isUploading">
+              <div class="progress-label-row">
+                <span>Uploading and validating</span>
+                <strong>{{ uploadProgress }}%</strong>
+              </div>
+              <div class="progress-track">
+                <span [style.width.%]="uploadProgress"></span>
+              </div>
+            </div>
+
+            <div *ngIf="uploadedFile" class="selected-file-card">
+              <div class="file-badge">📄</div>
+              <div class="file-meta">
+                <strong>{{ uploadedFile.name }}</strong>
+                <span>{{ getFileSize(uploadedFile) }}</span>
+              </div>
+              <button type="button" class="link-btn" (click)="browseFile()">Replace</button>
+            </div>
+
+            <div class="download-row">
+              <a href="javascript:void(0)" (click)="downloadSampleFormat()">Download sample format</a>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="monthYear">Month & Year <span class="required">*</span></label>
-            <input formControlName="monthYear" id="monthYear" type="text" class="form-control" readonly />
-          </div>
-        </form>
-
-        <!-- File Upload Section -->
-        <div class="file-upload-section">
-          <div class="drag-drop-area" (dragover)="onDragOver($event)" (drop)="onDrop($event)">
-            <div class="upload-icon">📁</div>
-            <div class="upload-text">Drag & Drop Attendance File Here</div>
-            <div class="upload-or">or</div>
-            <button class="btn btn-primary" (click)="browseFile()">Browse File</button>
-            <input id="fileInput" #fileInput type="file" hidden (change)="onFileSelected($event)" accept=".xlsx,.csv" />
-            <div class="upload-format">Supported .xlsx, .csv Max Size: 5MB</div>
+          <div class="preview-panel">
+            <div class="section-heading compact">
+              <div>
+                <p class="eyebrow">Preview</p>
+                <h3>Attendance summary preview</h3>
+              </div>
+            </div>
+            <div class="preview-grid">
+              <div class="preview-chip" *ngFor="let stat of previewStats" [class.warning]="stat.tone === 'warning'" [class.danger]="stat.tone === 'danger'" [class.success]="stat.tone === 'positive'">
+                <span>{{ stat.label }}</span>
+                <strong>{{ stat.value }}</strong>
+              </div>
+            </div>
           </div>
 
-          <div *ngIf="uploadedFile" class="file-selected">
-            <p>✓ File selected: {{ uploadedFile.name }}</p>
-          </div>
-
-          <div class="download-sample">
-            <a href="javascript:void(0)" (click)="downloadSampleFormat()">Download Sample Format</a>
+          <div class="sticky-actions">
+            <button type="button" class="btn btn-primary" (click)="uploadAndValidate()" [disabled]="!isStep1Valid() || isUploading">
+              <span *ngIf="!isUploading">Upload & validate</span>
+              <span *ngIf="isUploading" class="spinner"></span>
+              <span *ngIf="isUploading">Uploading...</span>
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="resetForm()">Reset</button>
           </div>
         </div>
 
-        <div class="action-buttons">
-          <button class="btn btn-primary" (click)="uploadAndValidate()" [disabled]="!isStep1Valid() || isUploading">
-            <span *ngIf="!isUploading">Upload & Validate</span>
-            <span *ngIf="isUploading">Uploading...</span>
-          </button>
-          <button class="btn btn-secondary">Reset</button>
-        </div>
-      </div>
-
-      <!-- Step 3: Validate Data -->
-      <div *ngIf="currentStep === 3" class="step-content">
-        <h2>Step 3: Validate Data</h2>
-        <div class="validation-summary">
-          <div class="validation-item valid">
-            <span class="icon">✓</span>
-            <span class="label">Valid Records:</span>
-            <span class="value">{{ validRecords }}</span>
+        <div *ngIf="currentStep === 3" class="step-content validation-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Step 3</p>
+              <h2>Validation results</h2>
+            </div>
+            <span class="status-chip success">Ready for submission</span>
           </div>
-          <div class="validation-item warning">
-            <span class="icon">⚠</span>
-            <span class="label">Missing Data:</span>
-            <span class="value">{{ missingData }}</span>
+
+          <div class="validation-summary">
+            <div class="validation-item valid">
+              <span class="icon">✓</span>
+              <span class="label">Valid records</span>
+              <span class="value">{{ validRecords }}</span>
+            </div>
+            <div class="validation-item warning">
+              <span class="icon">!</span>
+              <span class="label">Missing data</span>
+              <span class="value">{{ missingData }}</span>
+            </div>
+            <div class="validation-item error">
+              <span class="icon">✕</span>
+              <span class="label">Errors</span>
+              <span class="value">{{ errors }}</span>
+            </div>
           </div>
-          <div class="validation-item error">
-            <span class="icon">✕</span>
-            <span class="label">Errors:</span>
-            <span class="value">{{ errors }}</span>
+
+          <div class="table-card">
+            <table class="validation-table">
+              <thead>
+                <tr>
+                  <th>Issue type</th>
+                  <th>Status</th>
+                  <th>Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Duplicate employees</td>
+                  <td><span class="status-pill warning">Warning</span></td>
+                  <td>{{ duplicateRecords }}</td>
+                </tr>
+                <tr>
+                  <td>Missing employee IDs</td>
+                  <td><span class="status-pill danger">Action</span></td>
+                  <td>1</td>
+                </tr>
+                <tr>
+                  <td>Missing attendance</td>
+                  <td><span class="status-pill warning">Warning</span></td>
+                  <td>3</td>
+                </tr>
+                <tr>
+                  <td>Invalid dates</td>
+                  <td><span class="status-pill danger">Action</span></td>
+                  <td>2</td>
+                </tr>
+                <tr>
+                  <td>Invalid department</td>
+                  <td><span class="status-pill warning">Warning</span></td>
+                  <td>1</td>
+                </tr>
+                <tr>
+                  <td>Success count</td>
+                  <td><span class="status-pill success">Clear</span></td>
+                  <td>{{ validRecords }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="sticky-actions">
+            <button type="button" class="btn btn-primary" (click)="submitFinal()" [disabled]="!isStep3Valid()">Submit final</button>
+            <button type="button" class="btn btn-secondary" (click)="goToStep(1)">Back</button>
+            <button type="button" class="btn btn-link" (click)="downloadErrorReport()">Download error report</button>
           </div>
         </div>
+      </section>
 
-        <div class="action-buttons">
-          <button class="btn btn-primary" (click)="submitFinal()" [disabled]="!isStep3Valid()">
-            Submit Final
-          </button>
-          <button class="btn btn-secondary" (click)="goToStep(1)">
-            Back
-          </button>
-          <button class="btn btn-link" (click)="downloadErrorReport()">
-            Download Error Report
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Column - Sidebar -->
-    <div class="right-column">
-      <!-- Upload History -->
-      <div class="sidebar-section">
-        <h3>Upload History</h3>
-        <div class="history-list">
-          <div *ngFor="let history of uploadHistory" class="history-item">
-            <span class="month">{{ history.month }}</span>
-            <span class="status" [class.completed]="history.status === 'completed'" [class.not-uploaded]="history.status === 'not-uploaded'">
-              {{ history.status === 'completed' ? '✓ Completed' : 'Not Uploaded' }}
-            </span>
+      <aside class="right-column">
+        <section class="sidebar-section">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Recent activity</p>
+              <h3>Upload history</h3>
+            </div>
           </div>
-        </div>
-      </div>
+          <div class="timeline-list">
+            <div class="timeline-item" *ngFor="let history of uploadHistory">
+              <div class="timeline-marker" [class.completed]="history.status === 'completed'" [class.warning]="history.status === 'warning'" [class.pending]="history.status === 'not-uploaded'"></div>
+              <div class="timeline-content">
+                <div class="timeline-header">
+                  <strong>{{ history.month }}</strong>
+                  <span class="status-chip" [class.success]="history.status === 'completed'" [class.warning]="history.status === 'warning'" [class.info]="history.status === 'not-uploaded'">{{ history.status === 'completed' ? 'Completed' : history.status === 'warning' ? 'Needs review' : 'Pending' }}</span>
+                </div>
+                <p class="timeline-meta">Uploaded by {{ history.user }}</p>
+                <p class="timeline-meta" *ngIf="history.date">{{ history.date }}</p>
+                <p class="timeline-meta" *ngIf="history.filename">{{ history.filename }} • {{ history.size }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <!-- Payroll Impact -->
-      <div class="sidebar-section payroll-impact">
-        <h3>Payroll Impact</h3>
-        <div class="impact-message">
-          <p>This upload will affect salary processing for {{ attendanceForm.get('monthYear')?.value }}.</p>
-        </div>
-      </div>
+        <section class="sidebar-section payroll-impact">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Payroll impact</p>
+              <h3>Processing window</h3>
+            </div>
+            <span class="impact-icon">⚠</span>
+          </div>
+          <div class="impact-body">
+            <p>This upload will affect payroll processing for {{ attendanceForm.get('monthYear')?.value }}.</p>
+            <div class="impact-row">
+              <span>Deadline</span>
+              <strong>March 03, 2026</strong>
+            </div>
+            <div class="impact-row">
+              <span>Affected employees</span>
+              <strong>120</strong>
+            </div>
+            <div class="impact-row">
+              <span>Expected processing</span>
+              <strong>Mar 05, 2026</strong>
+            </div>
+          </div>
+        </section>
 
-      <!-- Data Preview (when step 1 complete) -->
-      <div *ngIf="currentStep >= 2" class="sidebar-section">
-        <h3>Preview</h3>
-        <table class="preview-table">
-          <thead>
-            <tr>
-              <th>Employee ID</th>
-              <th>Name</th>
-              <th>Present</th>
-              <th>Absent</th>
-              <th>Leave</th>
-              <th>Errors</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngIf="!uploadedFile">
-              <td colspan="6" class="no-preview">No preview available until file is uploaded.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <section class="sidebar-section preview-sidebar" *ngIf="currentStep >= 2">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Data view</p>
+              <h3>Employee preview</h3>
+            </div>
+          </div>
+          <div class="preview-list">
+            <div class="preview-row">
+              <span>Employee ID</span>
+              <strong>EMP-1042</strong>
+            </div>
+            <div class="preview-row">
+              <span>Staff name</span>
+              <strong>Meera S.</strong>
+            </div>
+            <div class="preview-row">
+              <span>Status</span>
+              <strong>Present</strong>
+            </div>
+            <div class="preview-row">
+              <span>Leave type</span>
+              <strong>Casual</strong>
+            </div>
+          </div>
+        </section>
+      </aside>
     </div>
   </div>
 </div>

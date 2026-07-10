@@ -4,8 +4,11 @@ import { AttendanceService } from '../../services/attendance.service';
 
 interface UploadHistory {
   month: string;
-  status: 'completed' | 'not-uploaded';
+  status: 'completed' | 'warning' | 'not-uploaded';
   date?: string;
+  user?: string;
+  filename?: string;
+  size?: string;
 }
 
 @Component({
@@ -19,6 +22,7 @@ export class AttendanceComponent implements OnInit {
   uploadedFile: File | null = null;
   uploadProgress = 0;
   isUploading = false;
+  private uploadTimer: number | null = null;
 
   // Summary data
   totalStaff = 120;
@@ -30,12 +34,54 @@ export class AttendanceComponent implements OnInit {
   validRecords = 0;
   missingData = 0;
   errors = 0;
+  duplicateRecords = 2;
+  invalidEntries = 1;
+  lateArrivals = 4;
+  overtimeHours = 18.5;
 
   // Upload history
   uploadHistory: UploadHistory[] = [
-    { month: 'March 2026', status: 'not-uploaded' },
-    { month: 'Feb 2026', status: 'completed', date: 'Feb 2026' },
-    { month: 'Jan 2026', status: 'completed', date: 'Jan 2026' }
+    {
+      month: 'March 2026',
+      status: 'not-uploaded',
+      user: 'HR Ops',
+      filename: 'No file uploaded',
+      size: '—'
+    },
+    {
+      month: 'Feb 2026',
+      status: 'completed',
+      date: 'Feb 26, 2026 09:30',
+      user: 'Anjali Rao',
+      filename: 'attendance_feb.csv',
+      size: '1.8 MB'
+    },
+    {
+      month: 'Jan 2026',
+      status: 'warning',
+      date: 'Jan 28, 2026 11:15',
+      user: 'Ravi M.',
+      filename: 'attendance_jan.xlsx',
+      size: '2.1 MB'
+    }
+  ];
+
+  summaryMetrics = [
+    { label: 'Upload Success Rate', value: '98.4%', trend: '↑ 2.4%', tone: 'positive', icon: '📈' },
+    { label: 'Pending Departments', value: '4', trend: '↓ 1', tone: 'neutral', icon: '🗂️' },
+    { label: 'Attendance Completion %', value: '92%', trend: '↑ 5%', tone: 'positive', icon: '✅' },
+    { label: 'Payroll Readiness %', value: '87%', trend: '↑ 3%', tone: 'positive', icon: '💳' }
+  ];
+
+  previewStats = [
+    { label: 'Total Present', value: '114', tone: 'positive' },
+    { label: 'Total Absent', value: '6', tone: 'warning' },
+    { label: 'Leave Count', value: '2', tone: 'neutral' },
+    { label: 'Holiday Count', value: '1', tone: 'neutral' },
+    { label: 'Late Arrivals', value: '4', tone: 'warning' },
+    { label: 'Overtime Hours', value: '18.5', tone: 'positive' },
+    { label: 'Duplicate Records', value: '2', tone: 'danger' },
+    { label: 'Invalid Entries', value: '1', tone: 'danger' }
   ];
 
   institutions = [
@@ -118,6 +164,9 @@ export class AttendanceComponent implements OnInit {
     }
 
     this.isUploading = true;
+    this.uploadProgress = 12;
+    this.startUploadProgress();
+
     const formData = new FormData();
     formData.append('file', this.uploadedFile);
     formData.append('institution', this.attendanceForm.get('institution')?.value);
@@ -126,14 +175,18 @@ export class AttendanceComponent implements OnInit {
 
     this.attendanceService.validateFile(formData).subscribe(
       (response: any) => {
+        this.stopUploadProgress();
         this.isUploading = false;
+        this.uploadProgress = 100;
         this.validRecords = response.validRecords || 0;
         this.missingData = response.missingData || 0;
         this.errors = response.errors || 0;
         this.currentStep = 3;
       },
       (error) => {
+        this.stopUploadProgress();
         this.isUploading = false;
+        this.uploadProgress = 0;
         alert('Error uploading file: ' + error.message);
       }
     );
@@ -170,7 +223,9 @@ export class AttendanceComponent implements OnInit {
   }
 
   resetForm(): void {
+    this.stopUploadProgress();
     this.uploadedFile = null;
+    this.uploadProgress = 0;
     this.validRecords = 0;
     this.missingData = 0;
     this.errors = 0;
@@ -192,5 +247,36 @@ export class AttendanceComponent implements OnInit {
 
   isStep3Valid(): boolean {
     return this.validRecords > 0;
+  }
+
+  getFileSize(file: File | null): string {
+    if (!file) {
+      return '0 KB';
+    }
+
+    const sizeInKb = Math.round(file.size / 1024);
+    if (sizeInKb < 1024) {
+      return `${sizeInKb} KB`;
+    }
+
+    return `${(sizeInKb / 1024).toFixed(1)} MB`;
+  }
+
+  getStatusClass(status: string): string {
+    return status === 'completed' ? 'completed' : status === 'warning' ? 'warning' : 'pending';
+  }
+
+  private startUploadProgress(): void {
+    this.stopUploadProgress();
+    this.uploadTimer = window.setInterval(() => {
+      this.uploadProgress = Math.min(this.uploadProgress + Math.floor(Math.random() * 11) + 5, 92);
+    }, 180);
+  }
+
+  private stopUploadProgress(): void {
+    if (this.uploadTimer !== null) {
+      window.clearInterval(this.uploadTimer);
+      this.uploadTimer = null;
+    }
   }
 }
